@@ -182,8 +182,8 @@
         audio.volume = 0;
         audio.play().then(() => {
           const fadeIn = setInterval(() => {
-            if (volume < 0.2) {
-              volume += 0.01;
+            if (volume < 0.05) {
+              volume += 0.001;
               audio.volume = volume;
             } else {
               clearInterval(fadeIn);
