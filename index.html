@@ -150,55 +150,6 @@
     }
   </script>
 
-<!--  Ambient Audio -->
-<audio id="ambient-audio" loop playsinline>
-  <source src="audio.mp3" type="audio/mp3">
-  Your browser does not support the audio element.
-</audio>
-
-<!--  Visual Indicator -->
-<div id="audio-indicator"></div>
-
-<script>
-  const audio = document.getElementById('ambient-audio');
-  let volume = 0;
-  audio.volume = volume;
-
-  function fadeInAudio() {
-    audio.volume = 0;
-    audio.play().then(() => {
-      const fadeIn = setInterval(() => {
-        if (volume < 0.2) {
-          volume += 0.01;
-          audio.volume = volume;
-        } else {
-          clearInterval(fadeIn);
-        }
-      }, 200);
-    }).catch(err => {
-      console.log('Autoplay blocked, will wait for user interaction');
-      // Wait for any user click to trigger fade-in
-      const startOnClick = () => {
-        audio.volume = 0;
-        audio.play().then(() => {
-          const fadeIn = setInterval(() => {
-            if (volume < 0.05) {
-              volume += 0.001;
-              audio.volume = volume;
-            } else {
-              clearInterval(fadeIn);
-            }
-          }, 200);
-        });
-        document.body.removeEventListener('click', startOnClick);
-      };
-      document.body.addEventListener('click', startOnClick);
-    });
-  }
-
-  window.addEventListener('load', fadeInAudio);
-</script>
-
 
 
 </body>
