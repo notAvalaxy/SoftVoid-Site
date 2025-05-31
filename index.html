@@ -3,24 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <title>softvoid.cc</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      background: #0e0e1a;
+      background: radial-gradient(circle at top left, #1a1a2e, #0e0e1a);
       color: #e0e0ff;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Quicksand', sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       height: 100vh;
       text-align: center;
     }
+    h1, p {
+      animation: float 6s ease-in-out infinite;
+    }
     h1 {
       font-size: 3rem;
+      margin: 0.2em;
     }
     p {
-      font-size: 1.2rem;
-      opacity: 0.8;
+      font-size: 1.25rem;
+      margin: 0.3em;
+      opacity: 0.85;
+    }
+    a {
+      color: #aaccff;
+      text-decoration: none;
+      border-bottom: 1px dashed #aaccff;
+      transition: all 0.3s ease;
+    }
+    a:hover {
+      color: #ffffff;
+      border-bottom: 1px solid #ffffff;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle 4s infinite ease-in-out;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
   </style>
 </head>
@@ -28,7 +61,18 @@
   <div>
     <h1>welcome to the softvoid</h1>
     <p>the stars are quiet. stay a while.</p>
-    <p><a href="https://twitch.tv/notavalaxy" style="color:#aad">watch the dream dives</a></p>
+    <p><a href="https://twitch.tv/notAvalaxy" target="_blank">watch the dream dives</a></p>
   </div>
+  <!-- randomly placed stars -->
+  <script>
+    for (let i = 0; i < 40; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.top = `${Math.random() * 100}vh`;
+      star.style.left = `${Math.random() * 100}vw`;
+      star.style.animationDelay = `${Math.random() * 5}s`;
+      document.body.appendChild(star);
+    }
+  </script>
 </body>
 </html>
