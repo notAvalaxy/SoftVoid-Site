@@ -150,13 +150,13 @@
     }
   </script>
 
-<!-- 🌙 Ambient Audio -->
+<!--  Ambient Audio -->
 <audio id="ambient-audio" loop playsinline>
   <source src="audio.mp3" type="audio/mp3">
   Your browser does not support the audio element.
 </audio>
 
-<!-- 🔴 Visual Indicator -->
+<!--  Visual Indicator -->
 <div id="audio-indicator"></div>
 
 <script>
@@ -182,7 +182,7 @@
 
 
 
-<!-- 💤 Are You Awake Button -->
+<!--  Are You Awake Button -->
 <button id="sleep-button" style="margin-top: 2rem; padding: 0.5em 1em; background-color: rgba(255, 255, 255, 0.03); color: rgba(204, 204, 204, 0.2); border: none; border-radius: 5px; transition: 0.3s;">
   Are you awake?
 </button>
@@ -228,6 +228,14 @@
     message.addEventListener('click', () => {
       location.reload();
     });
+  });
+</script>
+<script>
+  document.body.addEventListener('click', () => {
+    const audio = document.getElementById('ambient-audio');
+    if (audio.paused) {
+      audio.play().catch(err => console.log('Playback failed:', err));
+    }
   });
 </script>
 
