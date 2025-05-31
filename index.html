@@ -83,6 +83,32 @@
       50% { transform: translateY(-10px); }
     }
   </style>
+  <style>
+  #audio-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 10px;
+    height: 10px;
+    background-color: #aaccff;
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: pulse 2s infinite ease-in-out;
+    z-index: 999;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 1;
+    }
+  }
+</style>
+
 </head>
 <body>
   <div>
@@ -124,11 +150,35 @@
     }
   </script>
 
-  <!-- 🌙 Ambient Audio -->
-<audio autoplay loop id="ambient-audio">
+<!-- 🌙 Ambient Audio -->
+<audio id="ambient-audio" loop>
   <source src="audio.mp3" type="audio/mp3">
   Your browser does not support the audio element.
 </audio>
+
+<!-- 🔴 Visual Indicator -->
+<div id="audio-indicator"></div>
+
+<script>
+  window.addEventListener('load', () => {
+    const audio = document.getElementById('ambient-audio');
+    audio.volume = 0;
+    audio.play().then(() => {
+      let volume = 0;
+      const fadeIn = setInterval(() => {
+        if (volume < 0.5) {
+          volume += 0.01;
+          audio.volume = volume;
+        } else {
+          clearInterval(fadeIn);
+        }
+      }, 200); // Adjust speed here
+    }).catch(err => {
+      console.log('Autoplay blocked or error playing audio:', err);
+    });
+  });
+</script>
+
 
 
 
