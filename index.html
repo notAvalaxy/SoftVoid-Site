@@ -160,32 +160,45 @@
 <div id="audio-indicator"></div>
 
 <script>
-  window.addEventListener('load', () => {
-    const audio = document.getElementById('ambient-audio');
+  const audio = document.getElementById('ambient-audio');
+  let volume = 0;
+  audio.volume = volume;
+
+  function fadeInAudio() {
     audio.volume = 0;
     audio.play().then(() => {
-      let volume = 0;
       const fadeIn = setInterval(() => {
-        if (volume < 0.05) {
-          volume += 0.001;
+        if (volume < 0.2) {
+          volume += 0.01;
           audio.volume = volume;
         } else {
           clearInterval(fadeIn);
         }
-      }, 200); // Adjust speed here
+      }, 200);
     }).catch(err => {
-      console.log('Autoplay blocked or error playing audio:', err);
+      console.log('Autoplay blocked, will wait for user interaction');
+      // Wait for any user click to trigger fade-in
+      const startOnClick = () => {
+        audio.volume = 0;
+        audio.play().then(() => {
+          const fadeIn = setInterval(() => {
+            if (volume < 0.2) {
+              volume += 0.01;
+              audio.volume = volume;
+            } else {
+              clearInterval(fadeIn);
+            }
+          }, 200);
+        });
+        document.body.removeEventListener('click', startOnClick);
+      };
+      document.body.addEventListener('click', startOnClick);
     });
-  });
+  }
+
+  window.addEventListener('load', fadeInAudio);
 </script>
-<script>
-  document.body.addEventListener('click', () => {
-    const audio = document.getElementById('ambient-audio');
-    if (audio.paused) {
-      audio.play().catch(err => console.log('Playback failed:', err));
-    }
-  });
-</script>
+
 
 
 </body>
