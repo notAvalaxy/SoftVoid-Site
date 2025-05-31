@@ -16,6 +16,7 @@
       flex-direction: column;
       height: 100vh;
       text-align: center;
+      overflow: hidden;
     }
 
     h1, p {
@@ -45,18 +46,33 @@
       border-bottom: 1px solid #ffffff;
     }
 
+    img {
+      max-width: 200px;
+      margin-bottom: 2rem;
+      border-radius: 12px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .ascii-moon {
+      font-family: monospace;
+      font-size: 1rem;
+      color: #ccc;
+      opacity: 0.3;
+      margin-top: 1rem;
+    }
+
     .star {
       position: absolute;
-      width: 2px;
-      height: 2px;
-      background: #fff;
+      width: 1px;
+      height: 1px;
+      background: white;
       border-radius: 50%;
-      animation: twinkle 4s infinite ease-in-out;
+      animation: twinkle 3s infinite ease-in-out;
     }
 
     @keyframes twinkle {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.5); }
     }
 
     @keyframes float {
@@ -67,20 +83,27 @@
 </head>
 <body>
   <div>
-    <img src="Logo.png" alt="sleepy raccoon logo" style="max-width: 200px; margin-bottom: 2rem; border-radius: 12px;" />
-    <h1>Welcome to the void</h1>
+    <img src="Logo.png" alt="sleepy raccoon logo" />
+    <h1>Welcome to the Void</h1>
     <p>The stars are quiet, Stay a while.</p>
-    <!-- <p><a href="https://twitch.tv/notAvalaxy" target="_blank">watch the dream dives</a></p>
-  </div> -->
+    <!-- <p><a href="https://twitch.tv/notAvalaxy" target="_blank">watch the dream dives</a></p> -->
+    <div class="ascii-moon">
+      ( - . - )<br>
+      &nbsp;&nbsp;☽
+    </div>
+  </div>
 
-  <!-- randomly placed stars -->
   <script>
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       const star = document.createElement('div');
       star.className = 'star';
+      const size = Math.random() * 2 + 1;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
       star.style.top = `${Math.random() * 100}vh`;
       star.style.left = `${Math.random() * 100}vw`;
       star.style.animationDelay = `${Math.random() * 5}s`;
+      star.style.animationDuration = `${2 + Math.random() * 4}s`;
       document.body.appendChild(star);
     }
   </script>
