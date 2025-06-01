@@ -153,9 +153,34 @@
 <script>
   document.addEventListener('contextmenu', event => {
     event.preventDefault();
-    alert("No peeking.");
+
+    const message = document.createElement('div');
+    message.textContent = "No peeking.";
+    message.style.position = 'fixed';
+    message.style.bottom = '40px';
+    message.style.left = '50%';
+    message.style.transform = 'translateX(-50%)';
+    message.style.background = 'rgba(30, 30, 60, 0.8)';
+    message.style.color = '#ccc';
+    message.style.padding = '0.5em 1em';
+    message.style.borderRadius = '8px';
+    message.style.fontFamily = 'monospace';
+    message.style.fontSize = '0.9rem';
+    message.style.zIndex = 10000;
+    message.style.opacity = 0;
+    message.style.transition = 'opacity 0.5s ease';
+
+    document.body.appendChild(message);
+
+    // Fade in
+    setTimeout(() => { message.style.opacity = 1; }, 10);
+    // Fade out
+    setTimeout(() => { message.style.opacity = 0; }, 2000);
+    // Remove from DOM
+    setTimeout(() => { message.remove(); }, 3000);
   });
 </script>
+
 
 </body>
 </html>
