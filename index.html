@@ -150,7 +150,12 @@
     }
   </script>
 
-
+<script>
+  document.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    alert("No peeking.");
+  });
+</script>
 
 </body>
 </html>
