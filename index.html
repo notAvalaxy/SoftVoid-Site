@@ -53,17 +53,16 @@
       border-radius: 12px;
       animation: float 6s ease-in-out infinite;
     }
-    
-.ascii-moon {
-  font-family: monospace;
-  font-size: 10px;
-  color: #ccccff;
-  opacity: 0.7;
-  margin-top: 1rem;
-  line-height: 1.1;
-  animation: float 8s ease-in-out infinite;
-}
 
+    .ascii-moon {
+      font-family: monospace;
+      font-size: 10px;
+      color: #ccccff;
+      opacity: 0.7;
+      margin-top: 1rem;
+      line-height: 1.1;
+      animation: float 8s ease-in-out infinite;
+    }
 
     .star {
       position: absolute;
@@ -83,126 +82,65 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
-  </style>
-  <style>
-  #audio-indicator {
-    position: fixed;
-    bottom: 20px;
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Don't Click Me</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #fdf6f6;
-      margin: 0;
-      overflow: hidden;
-      height: 100vh;
+
+    #audio-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 10px;
+      height: 10px;
+      background-color: #aaccff;
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: pulse 2s infinite ease-in-out;
+      z-index: 999;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scale(1.4);
+        opacity: 1;
+      }
     }
 
     #chaosButton {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 30px;
+      width: 150px;
+      height: 150px;
       background-color: #e00000;
       color: white;
       border: none;
-      font-size: 20px;
       border-radius: 50%;
+      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
-      width: 150px;
-      height: 150px;
       box-shadow: 0 6px #900;
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease;
       text-align: center;
+      padding: 20px;
+      z-index: 999;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
     }
 
     #chaosButton:active {
+      transform: translate(-50%, -50%) scale(0.95);
       box-shadow: 0 3px #900;
-      transform: translate(-50%, -50%) scale(0.98);
     }
   </style>
 </head>
 <body>
 
+  <h1>softvoid.cc</h1>
+  <p>Here lies a void. Don't press the red thing.</p>
   <button id="chaosButton">Don't click me</button>
 
-  <script>
-    const messages = [
-      "Seriously. Don't.",
-      "Please stop.",
-      "No means no.",
-      "You're being very disobedient.",
-      "This is not what the button is for.",
-      "Just walk away...",
-      "Are you proud of yourself?",
-      "Okay, now you're just trolling.",
-      "Nothing's happening. Happy?",
-      "Click harder, maybe that helps.",
-      "There is no achievement here.",
-      "But why tho?",
-      "You must really like red circles.",
-      "Great, now the button's annoyed.",
-      "You're not going to stop, are you?",
-      "This is how Skynet starts.",
-      "Button.exe is not responding.",
-      "Initiating dramatic sigh...",
-      "404: Shame not found.",
-      "Go touch grass.",
-      "Click limit exceeded. Just kidding.",
-      "Now I'm on the run.",
-      "Nice try. I'm moving!",
-      "You can’t catch me~"
-    ];
-
-    let clickCount = 0;
-    const button = document.getElementById("chaosButton");
-
-    button.addEventListener("click", () => {
-      clickCount++;
-      button.textContent = messages[clickCount % messages.length];
-
-      // After 10 clicks, start moving around
-      if (clickCount > 10) {
-        const x = Math.random() * (window.innerWidth - 160); // 160 = button size + margin
-        const y = Math.random() * (window.innerHeight - 160);
-        button.style.left = `${x}px`;
-        button.style.top = `${y}px`;
-      }
-    });
-  </script>
-
-</body>
-</html>  right: 20px;
-    width: 10px;
-    height: 10px;
-    background-color: #aaccff;
-    border-radius: 50%;
-    opacity: 0.5;
-    animation: pulse 2s infinite ease-in-out;
-    z-index: 999;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.5;
-    }
-    50% {
-      transform: scale(1.4);
-      opacity: 1;
-    }
-  }
-</style>
-
-</head>
-<body>
-
-
+  <div id="audio-indicator"></div>
 
   <script>
     for (let i = 0; i < 60; i++) {
@@ -217,39 +155,78 @@
       star.style.animationDuration = `${2 + Math.random() * 4}s`;
       document.body.appendChild(star);
     }
+
+    document.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      const message = document.createElement('div');
+      message.textContent = "No peeking.";
+      message.style.position = 'fixed';
+      message.style.bottom = '40px';
+      message.style.left = '50%';
+      message.style.transform = 'translateX(-50%)';
+      message.style.background = 'rgba(30, 30, 60, 0.8)';
+      message.style.color = '#ccc';
+      message.style.padding = '0.5em 1em';
+      message.style.borderRadius = '8px';
+      message.style.fontFamily = 'monospace';
+      message.style.fontSize = '0.9rem';
+      message.style.zIndex = 10000;
+      message.style.opacity = 0;
+      message.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(message);
+      setTimeout(() => { message.style.opacity = 1; }, 10);
+      setTimeout(() => { message.style.opacity = 0; }, 2000);
+      setTimeout(() => { message.remove(); }, 3000);
+    });
+
+    const messages = [
+      "Seriously. Don't.",
+      "Please stop.",
+      "Why are you like this?",
+      "You're being very disobedient.",
+      "This is not what the button is for.",
+      "Just walk away...",
+      "Still clicking?",
+      "Okay, now you're just trolling.",
+      "Nothing's happening. Happy?",
+      "Click harder, maybe that helps.",
+      "There is no reward here.",
+      "You must really like red circles.",
+      "Now the button’s annoyed.",
+      "You're not going to stop, are you?",
+      "This is how Skynet starts.",
+      "Button.exe is not responding.",
+      "Initiating dramatic sigh...",
+      "404: Shame not found.",
+      "Go touch some grass.",
+      "Click limit exceeded.",
+      "Now I’m on the run.",
+      "Nice try. I’m moving!",
+      "You can’t catch me~"
+    ];
+
+    let clickCount = 0;
+    const button = document.getElementById("chaosButton");
+
+    button.addEventListener("click", () => {
+      clickCount++;
+      button.textContent = messages[clickCount % messages.length];
+
+      if (clickCount > 10) {
+        const buttonWidth = button.offsetWidth;
+        const buttonHeight = button.offsetHeight;
+        const maxX = window.innerWidth - buttonWidth;
+        const maxY = window.innerHeight - buttonHeight;
+        const newX = Math.random() * maxX;
+        const newY = Math.random() * maxY;
+
+        button.style.left = `${newX}px`;
+        button.style.top = `${newY}px`;
+        button.style.transform = `translate(0, 0)`; // prevent offset after moving
+      }
+    });
   </script>
-
-<script>
-  document.addEventListener('contextmenu', event => {
-    event.preventDefault();
-    const message = document.createElement('div');
-    message.textContent = "No peeking.";
-    message.style.position = 'fixed';
-    message.style.bottom = '40px';
-    message.style.left = '50%';
-    message.style.transform = 'translateX(-50%)';
-    message.style.background = 'rgba(30, 30, 60, 0.8)';
-    message.style.color = '#ccc';
-    message.style.padding = '0.5em 1em';
-    message.style.borderRadius = '8px';
-    message.style.fontFamily = 'monospace';
-    message.style.fontSize = '0.9rem';
-    message.style.zIndex = 10000;
-    message.style.opacity = 0;
-    message.style.transition = 'opacity 0.5s ease';
-
-    document.body.appendChild(message);
-
-    // Fade in
-    setTimeout(() => { message.style.opacity = 1; }, 10);
-    // Fade out
-    setTimeout(() => { message.style.opacity = 0; }, 2000);
-    // Remove from DOM
-    setTimeout(() => { message.remove(); }, 3000);
-  });
-</script>
-
-<!-- cWdtbG10dy51Z2Uvb3NsdXo/bj1wblhSYmc1SHlZMA== -->
 
 </body>
 </html>
