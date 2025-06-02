@@ -88,7 +88,96 @@
   #audio-indicator {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Don't Click Me</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #fdf6f6;
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #chaosButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 30px;
+      background-color: #e00000;
+      color: white;
+      border: none;
+      font-size: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      width: 150px;
+      height: 150px;
+      box-shadow: 0 6px #900;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    #chaosButton:active {
+      box-shadow: 0 3px #900;
+      transform: translate(-50%, -50%) scale(0.98);
+    }
+  </style>
+</head>
+<body>
+
+  <button id="chaosButton">Don't click me</button>
+
+  <script>
+    const messages = [
+      "Seriously. Don't.",
+      "Please stop.",
+      "No means no.",
+      "You're being very disobedient.",
+      "This is not what the button is for.",
+      "Just walk away...",
+      "Are you proud of yourself?",
+      "Okay, now you're just trolling.",
+      "Nothing's happening. Happy?",
+      "Click harder, maybe that helps.",
+      "There is no achievement here.",
+      "But why tho?",
+      "You must really like red circles.",
+      "Great, now the button's annoyed.",
+      "You're not going to stop, are you?",
+      "This is how Skynet starts.",
+      "Button.exe is not responding.",
+      "Initiating dramatic sigh...",
+      "404: Shame not found.",
+      "Go touch grass.",
+      "Click limit exceeded. Just kidding.",
+      "Now I'm on the run.",
+      "Nice try. I'm moving!",
+      "You can’t catch me~"
+    ];
+
+    let clickCount = 0;
+    const button = document.getElementById("chaosButton");
+
+    button.addEventListener("click", () => {
+      clickCount++;
+      button.textContent = messages[clickCount % messages.length];
+
+      // After 10 clicks, start moving around
+      if (clickCount > 10) {
+        const x = Math.random() * (window.innerWidth - 160); // 160 = button size + margin
+        const y = Math.random() * (window.innerHeight - 160);
+        button.style.left = `${x}px`;
+        button.style.top = `${y}px`;
+      }
+    });
+  </script>
+
+</body>
+</html>  right: 20px;
     width: 10px;
     height: 10px;
     background-color: #aaccff;
@@ -113,63 +202,7 @@
 </head>
 <body>
 
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Don't Click Me</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 100px;
-      background-color: #f5f5f5;
-    }
-    button {
-      padding: 20px 40px;
-      background-color: #d00000;
-      color: white;
-      border: none;
-      font-size: 24px;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 4px #900;
-    }
-    button:active {
-      box-shadow: 0 2px #900;
-      transform: translateY(2px);
-    }
-  </style>
-</head>
-<body>
-  <button id="chaosButton">Don't click me</button>
 
-  <script>
-    const messages = [
-      "Seriously. Don't.",
-      "What did I just say?",
-      "This button does nothing. Probably.",
-      "Clicking again won’t help.",
-      "You're only encouraging it.",
-      "Last warning...",
-      "Are you trying to summon something?",
-      "This is how you get ants.",
-      "I'm telling your internet.",
-      "Fine. Be that way.",
-      "Now look what you've done."
-    ];
-
-    let clickCount = 0;
-    const button = document.getElementById("chaosButton");
-
-    button.addEventListener("click", () => {
-      clickCount++;
-      const msg = messages[clickCount % messages.length];
-      button.textContent = msg;
-    });
-  </script>
-</body>
-</html>
 
   <script>
     for (let i = 0; i < 60; i++) {
