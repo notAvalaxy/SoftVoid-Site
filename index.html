@@ -106,38 +106,9 @@
         opacity: 1;
       }
     }
-
-    #chaosButton {
-      position: absolute;
-      width: 150px;
-      height: 150px;
-      background-color: #e00000;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 6px #900;
-      transition: transform 0.2s ease;
-      text-align: center;
-      padding: 20px;
-      z-index: 999;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-
-    #chaosButton:active {
-      transform: translate(-50%, -50%) scale(0.95);
-      box-shadow: 0 3px #900;
-    }
   </style>
 </head>
 <body>
-
-
-  <button id="chaosButton">Don't click me</button>
 
   <div id="audio-indicator"></div>
 
@@ -177,54 +148,6 @@
       setTimeout(() => { message.style.opacity = 1; }, 10);
       setTimeout(() => { message.style.opacity = 0; }, 2000);
       setTimeout(() => { message.remove(); }, 3000);
-    });
-
-    const messages = [
-      "Seriously. Don't.",
-      "Please stop.",
-      "Why are you like this?",
-      "You're being very disobedient.",
-      "This is not what the button is for.",
-      "Just walk away...",
-      "Still clicking?",
-      "Okay, now you're just trolling.",
-      "Nothing's happening. Happy?",
-      "Click harder, maybe that helps.",
-      "There is no reward here.",
-      "You must really like red circles.",
-      "Now the button’s annoyed.",
-      "You're not going to stop, are you?",
-      "This is how Skynet starts.",
-      "Button.exe is not responding.",
-      "Initiating dramatic sigh...",
-      "404: Shame not found.",
-      "Stop clicking me Naru.",
-      "Go touch some grass.",
-      "Click limit exceeded.",
-      "Now I’m on the run.",
-      "Nice try. I’m moving!",
-      "You can’t catch me~"
-    ];
-
-    let clickCount = 0;
-    const button = document.getElementById("chaosButton");
-
-    button.addEventListener("click", () => {
-      clickCount++;
-      button.textContent = messages[clickCount % messages.length];
-
-      if (clickCount > 10) {
-        const buttonWidth = button.offsetWidth;
-        const buttonHeight = button.offsetHeight;
-        const maxX = window.innerWidth - buttonWidth;
-        const maxY = window.innerHeight - buttonHeight;
-        const newX = Math.random() * maxX;
-        const newY = Math.random() * maxY;
-
-        button.style.left = `${newX}px`;
-        button.style.top = `${newY}px`;
-        button.style.transform = `translate(0, 0)`; // prevent offset after moving
-      }
     });
   </script>
 
