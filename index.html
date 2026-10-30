@@ -157,7 +157,7 @@
   <div class="tracker-panel">
     <h2>Game EXP Tracker</h2>
     <p>
-      Share your MapleStory game window. The blue box will lock onto your bottom-right EXP tracker bar automatically to monitor your progress in real time.
+      Share your MapleStory window. The blue box locks onto your bottom-right EXP tracker to live-stream your rates and countdown to level up.
     </p>
 
     <button id="start-btn" class="btn">Share Game Screen</button>
@@ -169,7 +169,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-label">EXP / Min</div>
-        <div id="exp-per-min" class="stat-value">0</div>
+        <div id="exp-per-min" class="stat-value">0.00%</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Est. Time to Level</div>
@@ -227,16 +227,17 @@
       setTimeout(() => { message.remove(); }, 3000);
     });
 
-    // --- OCR & EXP Tracker Engine (Tuned for MapleStory UI) ---
+    // --- OCR & EXP Tracker Engine ---
     let video = document.getElementById('game-video');
     let canvas = document.getElementById('ocr-canvas');
     let ctx = canvas.getContext('2d');
     let startBtn = document.getElementById('start-btn');
     
     let isTracking = false;
+    let expHistory = []; // Stores timestamps and values for rate calculation
     
-    // Percentage-based bounding box tracking the bottom-right EXP UI section
-    let roiPct = { x: 0.52, y: 0.90, width: 0.16, height: 0.08 }; 
+    // Slightly widened bounding box coordinates to capture full "21.953%" string
+    let roiPct = { x: 0.49, y: 0.88, width: 0.21, height: 0.10 }; 
 
     // Chart.js Configuration
     const chartCtx = document.getElementById('expChart').getContext('2d');
@@ -266,9 +267,14 @@
 
     startBtn.addEventListener('click', async () => {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          alert("Screen sharing requires a secure HTTPS connection.");
+          return;
+        }
+
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
         video.srcObject = stream;
-        video.play();
+        await video.play();
         isTracking = true;
         requestAnimationFrame(processFrame);
         setInterval(runOCR, 3000); // Scan every 3 seconds
@@ -286,13 +292,12 @@
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Calculate pixel coordinates from percentages
         let rx = canvas.width * roiPct.x;
         let ry = canvas.height * roiPct.y;
         let rw = canvas.width * roiPct.width;
         let rh = canvas.height * roiPct.height;
 
-        // Render the Region of Interest (ROI) blue outline box preview
+        // Render blue outline box preview
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 3;
         ctx.strokeRect(rx, ry, rw, rh);
@@ -308,7 +313,7 @@
       let rw = canvas.width * roiPct.width;
       let rh = canvas.height * roiPct.height;
 
-      // Crop the exact EXP area and scale it up 2x for cleaner OCR accuracy
+      // Crop and upscale 2x for OCR clarity
       const cropCanvas = document.createElement('canvas');
       cropCanvas.width = rw * 2;
       cropCanvas.height = rh * 2;
@@ -328,8 +333,42 @@
           const currentExp = parseFloat(match[0]);
           document.getElementById('current-exp').innerText = currentExp + "%";
           
-          const now = new Date().toLocaleTimeString();
-          expChart.data.labels.push(now);
+          const now = Date.now();
+          expHistory.push({ time: now, exp: currentExp });
+          
+          // Keep history window for the last 5 minutes
+          expHistory = expHistory.filter(item => now - item.time < 300000);
+
+          // Calculate EXP/Min and Time to Level if we have a valid history span
+          if (expHistory.length >= 2) {
+            const oldest = expHistory[0];
+            const latest = expHistory[expHistory.length - 1];
+            const minutesElapsed = (latest.time - oldest.time) / 60000;
+            
+            if (minutesElapsed > 0.05) { // At least 3 seconds of data
+              const expGained = latest.exp - oldest.exp;
+              const expPerMin = expGained / minutesElapsed;
+              
+              if (expPerMin > 0) {
+                document.getElementById('exp-per-min').innerText = expPerMin.toFixed(2) + "% / min";
+                
+                // Time to Level calculation (reaching 100%)
+                const remainingExp = 100 - currentExp;
+                const ttlMinutes = remainingExp / expPerMin;
+                
+                if (ttlMinutes < 60) {
+                  document.getElementById('time-to-level').innerText = Math.round(ttlMinutes) + " mins";
+                } else {
+                  const hours = (ttlMinutes / 60).toFixed(1);
+                  document.getElementById('time-to-level').innerText = hours + " hrs";
+                }
+              }
+            }
+          }
+
+          // Update chart
+          const timeString = new Date().toLocaleTimeString();
+          expChart.data.labels.push(timeString);
           expChart.data.datasets[0].data.push(currentExp);
           
           if (expChart.data.labels.length > 25) {
