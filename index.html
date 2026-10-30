@@ -2,50 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>softvoid.cc - EXP Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
-  
-  <!-- CDNs for Tesseract.js (OCR) and Chart.js (Analytics) -->
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tesseract.js (OCR). The graph is drawn by hand, so Chart.js is no longer needed. -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
+    :root {
+      --text: #e0e0ff;
+      --dim: #a0a0c0;
+      --accent: #93c5fd;
+      --btn: #3b82f6;
+      --btn-hover: #2563eb;
+      --ok: #34d399;
+      --bad: #ff8a8a;
+      --line: rgba(255, 255, 255, 0.1);
+    }
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      background: radial-gradient(circle at top left, #1a1a2e, #0e0e1a);
-      color: #e0e0ff;
+      background: radial-gradient(circle at top left, #1a1a2e, #0e0e1a) fixed;
+      color: var(--text);
       font-family: 'Quicksand', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       overflow-x: hidden;
-      overflow-y: auto;
     }
 
+    /* ---------- Starry background ---------- */
+    #stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .star {
       position: absolute;
-      width: 1px;
-      height: 1px;
       background: white;
       border-radius: 50%;
       animation: twinkle 3s infinite ease-in-out;
-      z-index: 1;
-      pointer-events: none;
     }
-
     @keyframes twinkle {
       0%, 100% { opacity: 0.4; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.5); }
     }
+    @media (prefers-reduced-motion: reduce) { .star, #audio-indicator { animation: none; } }
 
-    /* EXP Tracker Main Glassmorphism Panel */
+    /* ---------- Panel ---------- */
     .tracker-panel {
       position: relative;
       z-index: 10;
-      width: 90%;
-      max-width: 800px;
-      margin: 60px auto;
+      width: 92%;
+      max-width: 860px;
+      margin: 48px auto;
       padding: 28px;
       background: rgba(20, 20, 35, 0.78);
       backdrop-filter: blur(10px);
@@ -53,102 +62,81 @@
       border-radius: 16px;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
     }
+    h2 { margin: 0 0 4px; font-weight: 700; letter-spacing: 0.5px; }
+    p.intro { margin: 0 0 18px; opacity: 0.85; font-size: 0.95rem; line-height: 1.45; }
+    code { color: var(--accent); }
 
-    h2 {
-      margin-top: 0;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-
-    p {
-      opacity: 0.85;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .btn {
-      background: #3b82f6;
+      background: var(--btn);
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 10px 18px;
       border-radius: 8px;
-      font-family: 'Quicksand', sans-serif;
-      font-weight: 600;
+      font: 600 0.95rem 'Quicksand', sans-serif;
       cursor: pointer;
       transition: background 0.2s ease, transform 0.1s ease;
-      margin-top: 10px;
     }
-    .btn:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn:hover { background: var(--btn-hover); transform: translateY(-1px); }
+    .btn.ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); }
+    .btn.ghost:hover { background: rgba(255, 255, 255, 0.12); }
+    .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+    .btn.live { background: #059669; }
+    .btn:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .controls label { display: flex; gap: 6px; align-items: center; font-size: 0.9rem; color: var(--dim); }
+    select {
+      font: 500 0.9rem 'Quicksand', sans-serif; color: var(--text);
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line);
+      border-radius: 8px; padding: 8px 10px;
+    }
+    select option { background: #1a1a2e; }
 
+    /* ---------- Stats ---------- */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin: 24px 0;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      margin: 22px 0 8px;
     }
-
     .stat-card {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 16px;
+      padding: 14px;
       border-radius: 10px;
       text-align: center;
     }
+    .stat-card.main { grid-column: 1 / -1; padding: 18px; border-color: rgba(147, 197, 253, 0.35); }
+    .stat-label { font-size: 0.85rem; opacity: 0.7; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .main .stat-value { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.1; }
+    .main .sub { color: var(--dim); font-size: 0.95rem; margin-top: 2px; }
 
-    .stat-label {
-      font-size: 0.85rem;
-      opacity: 0.7;
-    }
+    .status { font-size: 0.85rem; color: var(--dim); min-height: 1.3em; margin: 6px 0 0; }
+    .status.err { color: var(--bad); }
 
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #93c5fd;
-      margin-top: 6px;
+    /* ---------- Capture ---------- */
+    .instruction-hint { font-size: 0.85rem; color: var(--accent); margin: 18px 0 8px; }
+    #stage {
+      position: relative; width: 100%; min-height: 140px; background: #000;
+      border-radius: 8px; overflow: hidden; border: 1px solid var(--line);
     }
+    #stage video { display: block; width: 100%; height: auto; }
+    #overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+    #empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--dim); }
+    .peek { display: flex; gap: 12px; align-items: center; margin-top: 10px; min-height: 44px; }
+    .peek canvas { max-height: 44px; max-width: 50%; background: #fff; border-radius: 3px; }
+    .peek code { font: 0.85rem/1.3 ui-monospace, Consolas, monospace; word-break: break-all; }
 
-    .instruction-hint {
-      font-size: 0.85rem;
-      color: #93c5fd;
-      margin-top: 12px;
-      margin-bottom: 6px;
-    }
-
-    #canvas-container {
-      position: relative;
-      width: 100%;
-      background: #000;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: crosshair;
-    }
-
-    video, canvas {
-      width: 100%;
-      display: block;
-    }
-
-    .chart-wrapper {
-      margin-top: 25px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      border-radius: 10px;
-    }
+    /* ---------- Chart ---------- */
+    .chart-wrapper { margin-top: 22px; background: rgba(0, 0, 0, 0.2); padding: 14px; border-radius: 10px; }
+    .chart-wrapper h3 { margin: 0 0 8px; font-size: 0.9rem; font-weight: 600; color: var(--dim); }
+    #chart { width: 100%; height: 250px; display: block; }
 
     #audio-indicator {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 10px;
-      height: 10px;
-      background-color: #aaccff;
-      border-radius: 50%;
-      opacity: 0.5;
-      animation: pulse 2s infinite ease-in-out;
-      z-index: 999;
+      position: fixed; bottom: 20px; right: 20px; width: 10px; height: 10px;
+      background-color: #aaccff; border-radius: 50%; opacity: 0.5;
+      animation: pulse 2s infinite ease-in-out; z-index: 999;
     }
-
     @keyframes pulse {
       0%, 100% { transform: scale(1); opacity: 0.5; }
       50% { transform: scale(1.4); opacity: 1; }
@@ -157,305 +145,336 @@
 </head>
 <body>
 
-  <!-- Audio Indicator Dot -->
+  <div id="stars"></div>
   <div id="audio-indicator"></div>
 
-  <!-- EXP Tracker Interface Panel -->
-  <div class="tracker-panel">
+  <main class="tracker-panel">
     <h2>Game EXP Tracker</h2>
-    <p>
-      Share your game window. Frame your box around both your raw EXP number and percentage (e.g., <code>32,891 (23.72%)</code>) to track absolute EXP gains and precise time-to-level!
+    <p class="intro">
+      Share your game window, then drag a box around your EXP readout, like <code>33,041 (23.83%)</code>.
+      The page reads it every few seconds and tracks your gains, rate and time to level.
     </p>
 
-    <button id="start-btn" class="btn">Share Game Screen</button>
+    <div class="controls">
+      <button id="start-btn" class="btn">Share game screen</button>
+      <button id="pause-btn" class="btn ghost" disabled>Pause</button>
+      <button id="reset-btn" class="btn ghost">Reset session</button>
+      <label>Read every
+        <select id="interval">
+          <option value="1000">1 s</option>
+          <option value="2000" selected>2 s</option>
+          <option value="5000">5 s</option>
+        </select>
+      </label>
+    </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card main">
         <div class="stat-label">Current EXP</div>
         <div id="current-exp" class="stat-value">--</div>
+        <div id="current-pct" class="sub">Level progress --</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">EXP / Min</div>
-        <div id="exp-per-min" class="stat-value">0 EXP / min</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Est. Time to Level</div>
-        <div id="time-to-level" class="stat-value">--</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">EXP / 10 min</div><div id="rate10" class="stat-value">--</div></div>
+      <div class="stat-card"><div class="stat-label">Time to level</div><div id="eta" class="stat-value">--</div></div>
+      <div class="stat-card"><div class="stat-label">Gained this session</div><div id="gain" class="stat-value">0</div></div>
+      <div class="stat-card"><div class="stat-label">Session time</div><div id="elapsed" class="stat-value">0:00</div></div>
     </div>
+    <p class="status" id="status">Waiting for a capture.</p>
 
-    <div class="instruction-hint">👇 Click & drag on the feed below to adjust your EXP bounding box:</div>
-    <div id="canvas-container">
-      <video id="game-video" autoplay playsinline style="display:none;"></video>
-      <canvas id="ocr-canvas"></canvas>
+    <div class="instruction-hint">Click and drag on the feed below to box your EXP text. Redraw it any time.</div>
+    <div id="stage">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
+      <div id="empty">Nothing shared yet. Choose “Share game screen” and pick your game.</div>
     </div>
+    <div class="peek"><canvas id="peek" width="1" height="1"></canvas><code id="raw-text">OCR text appears here</code></div>
 
     <div class="chart-wrapper">
-      <canvas id="expChart" height="110"></canvas>
+      <h3>EXP gained over time</h3>
+      <canvas id="chart"></canvas>
     </div>
-  </div>
+  </main>
 
   <script>
-    // --- Starry Background Generation ---
-    for (let i = 0; i < 60; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      const size = Math.random() * 2 + 1;
-      star.style.width = `${size}px`;
-      star.style.height = `${size}px`;
-      star.style.top = `${Math.random() * 100}vh`;
-      star.style.left = `${Math.random() * 100}vw`;
-      star.style.animationDelay = `${Math.random() * 5}s`;
-      star.style.animationDuration = `${2 + Math.random() * 4}s`;
-      document.body.appendChild(star);
-    }
+    // --- Starry background ---
+    (() => {
+      const wrap = document.getElementById('stars');
+      for (let i = 0; i < 70; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 2 + 1;
+        star.style.width = star.style.height = `${size}px`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.animationDelay = `${Math.random() * 5}s`;
+        star.style.animationDuration = `${2 + Math.random() * 4}s`;
+        wrap.appendChild(star);
+      }
+    })();
 
-    // --- "No Peeking" Context Menu ---
+    // --- "No peeking" context menu ---
     document.addEventListener('contextmenu', event => {
       event.preventDefault();
       const message = document.createElement('div');
-      message.textContent = "No peeking.";
-      message.style.position = 'fixed';
-      message.style.bottom = '40px';
-      message.style.left = '50%';
-      message.style.transform = 'translateX(-50%)';
-      message.style.background = 'rgba(30, 30, 60, 0.9)';
-      message.style.color = '#ccc';
-      message.style.padding = '0.5em 1em';
-      message.style.borderRadius = '8px';
-      message.style.fontFamily = 'monospace';
-      message.style.fontSize = '0.9rem';
-      message.style.zIndex = 10000;
-      message.style.opacity = 0;
-      message.style.transition = 'opacity 0.5s ease';
-
+      message.textContent = 'No peeking.';
+      Object.assign(message.style, {
+        position: 'fixed', bottom: '40px', left: '50%', transform: 'translateX(-50%)',
+        background: 'rgba(30, 30, 60, 0.9)', color: '#ccc', padding: '0.5em 1em',
+        borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.9rem', zIndex: 10000,
+        opacity: 0, transition: 'opacity 0.5s ease'
+      });
       document.body.appendChild(message);
       setTimeout(() => { message.style.opacity = 1; }, 10);
       setTimeout(() => { message.style.opacity = 0; }, 2000);
       setTimeout(() => { message.remove(); }, 3000);
     });
 
-    // --- OCR & EXP Tracker Engine with Raw Value Parsing ---
-    const video = document.getElementById('game-video');
-    const canvas = document.getElementById('ocr-canvas');
-    const ctx = canvas.getContext('2d');
-    const startBtn = document.getElementById('start-btn');
-    
-    let isTracking = false;
-    let expHistory = []; 
-    
-    let roiPct = { x: 0.52, y: 0.93, width: 0.20, height: 0.05 };
-    const savedRoi = localStorage.getItem('softvoid_roi_pct');
-    if (savedRoi) {
+    // --- EXP tracker ---
+    (() => {
+      const $ = id => document.getElementById(id);
+      const video = $('video'), overlay = $('overlay'), octx = overlay.getContext('2d');
+      const BOX_KEY = 'softvoid_roi_pct';
+      let box = null;                 // normalised {x,y,w,h}, 0..1 of the video frame
+      let stream = null, worker = null, paused = false, loopTimer = null, busy = false;
+      let S; resetState();
+
+      function resetState() { S = { start: null, samples: [], gain: 0, last: null, total: null, cand: null, resync: false }; }
+
       try {
-        roiPct = JSON.parse(savedRoi);
-      } catch (e) {
-        console.warn("Could not load saved ROI", e);
-      }
-    }
+        const saved = JSON.parse(localStorage.getItem(BOX_KEY));
+        // Accept the old format ({x,y,width,height}) as well as the new one.
+        if (saved) box = { x: saved.x, y: saved.y, w: saved.w ?? saved.width, h: saved.h ?? saved.height };
+        if (box && !(box.w > 0 && box.h > 0)) box = null;
+      } catch (e) { box = null; }
 
-    let dragStart = null;
-
-    canvas.addEventListener('mousedown', (e) => {
-      if (!isTracking) return;
-      const rect = canvas.getBoundingClientRect();
-      dragStart = {
-        x: (e.clientX - rect.left) / rect.width,
-        y: (e.clientY - rect.top) / rect.height
-      };
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-      if (!dragStart || !isTracking) return;
-      const rect = canvas.getBoundingClientRect();
-      const current = {
-        x: (e.clientX - rect.left) / rect.width,
-        y: (e.clientY - rect.top) / rect.height
-      };
-
-      roiPct = {
-        x: Math.min(dragStart.x, current.x),
-        y: Math.min(dragStart.y, current.y),
-        width: Math.abs(current.x - dragStart.x),
-        height: Math.abs(current.y - dragStart.y)
-      };
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (dragStart) {
-        dragStart = null;
-        localStorage.setItem('softvoid_roi_pct', JSON.stringify(roiPct));
-      }
-    });
-
-    // Chart.js Configuration (Tracking Raw Absolute EXP)
-    const chartCtx = document.getElementById('expChart').getContext('2d');
-    const expChart = new Chart(chartCtx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Total EXP Trajectory',
-          data: [],
-          borderColor: '#93c5fd',
-          backgroundColor: 'rgba(147, 197, 253, 0.1)',
-          fill: true,
-          tension: 0.25,
-          pointRadius: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: '#e0e0ff', font: { family: 'Quicksand' } } } },
-        scales: {
-          x: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          y: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-        }
-      }
-    });
-
-    startBtn.addEventListener('click', async () => {
-      try {
+      /* ---------- capture ---------- */
+      $('start-btn').onclick = async () => {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-          alert("Screen sharing requires a secure HTTPS connection.");
-          return;
+          setStatus('Screen sharing needs a desktop browser and a secure (HTTPS) connection.', true); return;
         }
-
-        if (video.srcObject) {
-          video.srcObject.getTracks().forEach(track => track.stop());
-        }
-
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        try {
+          stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false });
+        } catch (e) { setStatus('Screen sharing was cancelled or blocked.', true); return; }
         video.srcObject = stream;
-        await video.play();
-        isTracking = true;
-        requestAnimationFrame(processFrame);
-        
-        if (window.ocrInterval) clearInterval(window.ocrInterval);
-        window.ocrInterval = setInterval(runOCR, 3000);
+        $('empty').style.display = 'none';
+        $('pause-btn').disabled = false;
+        $('start-btn').textContent = 'Tracking active (click to re-share)';
+        $('start-btn').classList.add('live');
+        stream.getVideoTracks()[0].onended = () => {
+          stopLoop(); stream = null; $('empty').style.display = 'grid';
+          $('start-btn').textContent = 'Share game screen'; $('start-btn').classList.remove('live');
+          setStatus('Sharing stopped.', true);
+        };
+        video.onloadedmetadata = () => { sizeOverlay(); drawBox(); };
+        setStatus('Loading text recognition…');
+        try { await ensureWorker(); } catch (e) { setStatus('Could not load the OCR engine. Check your connection and reload.', true); return; }
+        setStatus(box ? 'Reading…' : 'Draw a box around the EXP value to begin.');
+        startLoop();
+      };
 
-        startBtn.textContent = "Tracking Active (Click to Re-share)";
-        startBtn.style.background = "#059669";
-      } catch (err) {
-        console.error("Screen capture cancelled or error:", err);
+      $('pause-btn').onclick = () => {
+        paused = !paused;
+        $('pause-btn').textContent = paused ? 'Resume' : 'Pause';
+        setStatus(paused ? 'Paused. Time spent paused still counts toward rates.' : 'Reading…');
+      };
+      $('reset-btn').onclick = () => { resetState(); updateUI(); drawChart(); setStatus(stream ? 'Session reset.' : 'Waiting for a capture.'); };
+      $('interval').onchange = () => { if (stream) startLoop(); };
+
+      async function ensureWorker() {
+        if (worker) return;
+        worker = await Tesseract.createWorker('eng');
+        await worker.setParameters({ tessedit_char_whitelist: '0123456789,.()% ', tessedit_pageseg_mode: '7' });
       }
-    });
 
-    function processFrame() {
-      if (!isTracking) return;
-      if (video.videoWidth > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        let rx = canvas.width * roiPct.x;
-        let ry = canvas.height * roiPct.y;
-        let rw = canvas.width * roiPct.width;
-        let rh = canvas.height * roiPct.height;
-
-        ctx.strokeStyle = '#3b82f6';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(rx, ry, rw, rh);
+      /* ---------- box drawing ---------- */
+      function sizeOverlay() {
+        const r = video.getBoundingClientRect();
+        overlay.width = Math.max(1, Math.round(r.width));
+        overlay.height = Math.max(1, Math.round(r.height));
       }
-      requestAnimationFrame(processFrame);
-    }
+      new ResizeObserver(() => { sizeOverlay(); drawBox(); }).observe($('stage'));
 
-    async function runOCR() {
-      if (!isTracking || canvas.width === 0) return;
+      let drag = null;
+      const pt = e => {
+        const r = overlay.getBoundingClientRect();
+        return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) };
+      };
+      overlay.addEventListener('pointerdown', e => { if (!stream) return; overlay.setPointerCapture(e.pointerId); drag = pt(e); });
+      overlay.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const p = pt(e);
+        box = { x: Math.min(drag.x, p.x), y: Math.min(drag.y, p.y), w: Math.abs(p.x - drag.x), h: Math.abs(p.y - drag.y) };
+        drawBox();
+      });
+      overlay.addEventListener('pointerup', () => {
+        if (!drag) return; drag = null;
+        if (box && (box.w < 0.005 || box.h < 0.005)) { box = null; drawBox(); return; }
+        try { localStorage.setItem(BOX_KEY, JSON.stringify(box)); } catch (e) {}
+        S.cand = null; setStatus('Box set. Reading…');
+      });
+      function drawBox() {
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+        if (!box) return;
+        const x = box.x * overlay.width, y = box.y * overlay.height, w = box.w * overlay.width, h = box.h * overlay.height;
+        octx.fillStyle = 'rgba(59,130,246,.18)'; octx.fillRect(x, y, w, h);
+        octx.strokeStyle = '#3b82f6'; octx.lineWidth = 2; octx.strokeRect(x, y, w, h);
+      }
 
-      let rx = canvas.width * roiPct.x;
-      let ry = canvas.height * roiPct.y;
-      let rw = canvas.width * roiPct.width;
-      let rh = canvas.height * roiPct.height;
-
-      const cropCanvas = document.createElement('canvas');
-      cropCanvas.width = rw * 3;
-      cropCanvas.height = rh * 3;
-      const cropCtx = cropCanvas.getContext('2d');
-      cropCtx.imageSmoothingEnabled = false;
-      cropCtx.drawImage(canvas, rx, ry, rw, rh, 0, 0, cropCanvas.width, cropCanvas.height);
-
-      try {
-        // Whitelist includes numbers, commas, dots, and percent signs
-        const result = await Tesseract.recognize(cropCanvas, 'eng', {
-          tessedit_char_whitelist: '0123456789.,%'
-        });
-        
-        const rawText = result.data.text.trim();
-        console.log("Raw OCR Read:", rawText);
-
-        // Extract all numbers (handling commas like "32,891" and decimals like "23.72")
-        const allNumbers = rawText.match(/[\d,]+(?:\.\d+)?/g);
-        
-        if (allNumbers && allNumbers.length >= 2) {
-          // Typically the first large number is raw EXP and the decimal number is percentage
-          let rawExpStr = '';
-          let pctVal = 0;
-
-          for (let numStr of allNumbers) {
-            if (numStr.includes('.')) {
-              pctVal = parseFloat(numStr);
-            } else if (numStr.replace(/,/g, '').length >= 3) {
-              rawExpStr = numStr;
-            }
-          }
-
-          const currentRawExp = parseInt(rawExpStr.replace(/,/g, ''), 10);
-
-          if (!isNaN(currentRawExp) && currentRawExp > 0 && pctVal > 0 && pctVal < 100) {
-            document.getElementById('current-exp').innerText = currentRawExp.toLocaleString() + ` (${pctVal}%)`;
-            
-            const now = Date.now();
-            expHistory.push({ time: now, exp: currentRawExp, pct: pctVal });
-            
-            // Keep history window for the last 5 minutes
-            expHistory = expHistory.filter(item => now - item.time < 300000);
-
-            if (expHistory.length >= 2) {
-              const oldest = expHistory[0];
-              const latest = expHistory[expHistory.length - 1];
-              const minutesElapsed = (latest.time - oldest.time) / 60000;
-              
-              if (minutesElapsed > 0.05) { 
-                const expGained = latest.exp - oldest.exp;
-                
-                if (expGained > 0) {
-                  const expPerMin = Math.round(expGained / minutesElapsed);
-                  document.getElementById('exp-per-min').innerText = expPerMin.toLocaleString() + " EXP / min";
-                  
-                  // Estimate total EXP needed for level using current raw EXP and percentage ratio
-                  const estimatedTotalExpForLevel = currentRawExp / (pctVal / 100);
-                  const remainingExp = estimatedTotalExpForLevel - currentRawExp;
-                  const ttlMinutes = remainingExp / expPerMin;
-                  
-                  if (ttlMinutes > 0 && isFinite(ttlMinutes)) {
-                    if (ttlMinutes < 60) {
-                      document.getElementById('time-to-level').innerText = Math.round(ttlMinutes) + " mins";
-                    } else {
-                      const hours = (ttlMinutes / 60).toFixed(1);
-                      document.getElementById('time-to-level').innerText = hours + " hrs";
-                    }
-                  }
-                }
-              }
-            }
-
-            // Update chart with raw EXP progression
-            const timeString = new Date().toLocaleTimeString();
-            expChart.data.labels.push(timeString);
-            expChart.data.datasets[0].data.push(currentRawExp);
-            
-            if (expChart.data.labels.length > 25) {
-              expChart.data.labels.shift();
-              expChart.data.datasets[0].data.shift();
-            }
-            expChart.update();
-          }
+      /* ---------- OCR loop ---------- */
+      function startLoop() { stopLoop(); tick(); }
+      function stopLoop() { clearTimeout(loopTimer); loopTimer = null; }
+      async function tick() {
+        if (!stream) return;
+        if (!paused && !busy && box && video.videoWidth) {
+          busy = true;
+          try { await readOnce(); } catch (e) { setStatus('Read error: ' + e.message, true); }
+          busy = false;
         }
-      } catch (ocrErr) {
-        console.warn("OCR scan iteration skipped:", ocrErr);
+        loopTimer = setTimeout(tick, +$('interval').value);
       }
-    }
+
+      function preprocess() {
+        const vw = video.videoWidth, vh = video.videoHeight;
+        const sx = box.x * vw, sy = box.y * vh, sw = Math.max(4, box.w * vw), sh = Math.max(4, box.h * vh);
+        const scale = Math.min(8, Math.max(2, 90 / sh));
+        const pad = 12, W = Math.round(sw * scale), H = Math.round(sh * scale);
+        const c = document.createElement('canvas'); c.width = W + pad * 2; c.height = H + pad * 2;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(video, sx, sy, sw, sh, pad, pad, W, H);
+        const img = x.getImageData(0, 0, c.width, c.height), d = img.data, n = d.length / 4;
+        const g = new Uint8Array(n), hist = new Array(256).fill(0);
+        for (let i = 0; i < n; i++) { const v = (d[i*4]*0.299 + d[i*4+1]*0.587 + d[i*4+2]*0.114) | 0; g[i] = v; hist[v]++; }
+        // Otsu threshold
+        let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+        let wB = 0, sB = 0, best = 0, th = 128;
+        for (let t = 0; t < 256; t++) {
+          wB += hist[t]; if (!wB) continue; const wF = n - wB; if (!wF) break;
+          sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
+          if (v > best) { best = v; th = t; }
+        }
+        let bright = 0; for (let i = 0; i < n; i++) if (g[i] > th) bright++;
+        const textIsLight = bright < n / 2;   // text is the minority colour
+        for (let i = 0; i < n; i++) {
+          const isText = textIsLight ? g[i] > th : g[i] <= th;
+          const o = isText ? 0 : 255; d[i*4] = d[i*4+1] = d[i*4+2] = o; d[i*4+3] = 255;
+        }
+        x.putImageData(img, 0, 0);
+        return c;
+      }
+
+      function parse(text) {
+        const s = text.replace(/\s+/g, '');
+        const m = s.match(/([\d,.]+)\((\d{1,3}(?:[.,]\d+)?)%?\)?/);
+        if (!m) return null;
+        const exp = parseInt(m[1].replace(/[^\d]/g, ''), 10);
+        const pct = parseFloat(m[2].replace(',', '.'));
+        if (!isFinite(exp) || !isFinite(pct) || pct > 100) return null;
+        return { exp, pct };
+      }
+
+      async function readOnce() {
+        const c = preprocess();
+        const pc = $('peek'); pc.width = c.width; pc.height = c.height; pc.getContext('2d').drawImage(c, 0, 0);
+        const { data } = await worker.recognize(c);
+        $('raw-text').textContent = data.text.trim() || '(no text found)';
+        const r = parse(data.text);
+        if (!r) { setStatus('Could not read an “exp (percent%)” value. Try a tighter box around just the numbers.', true); return; }
+        handle(r, Date.now());
+      }
+
+      /* ---------- tracking logic ---------- */
+      function accept(r, t, addGain) {
+        if (!S.start) S.start = t;
+        S.gain += addGain;
+        const total = r.pct >= 2 ? r.exp / (r.pct / 100) : null;
+        if (total != null) S.total = (S.total == null || S.resync) ? total : S.total * 0.9 + total * 0.1;
+        S.resync = false;
+        S.last = r; S.cand = null;
+        S.samples.push({ t, gain: S.gain });
+        if (S.samples.length > 20000) S.samples.splice(0, 5000);
+        setStatus('Reading OK.');
+        updateUI(); drawChart();
+      }
+
+      function handle(r, t) {
+        if (!S.last) { accept(r, t, 0); return; }
+        const total = r.pct >= 2 ? r.exp / (r.pct / 100) : null;
+        const levelUp = S.last.pct > 80 && r.pct < 20 && r.exp < S.last.exp;
+        const consistent = total == null || S.total == null || Math.abs(total / S.total - 1) < 0.03;
+        if (consistent && !levelUp) { accept(r, t, r.exp - S.last.exp); return; }
+
+        // Unusual reading: only trust it after three similar reads in a row.
+        if (S.cand && Math.abs(S.cand.exp - r.exp) <= Math.max(5, S.cand.exp * 0.02)) S.cand.n++;
+        else S.cand = { exp: r.exp, n: 1 };
+        if (S.cand.n < 3) { setStatus('Odd reading ignored (' + r.exp.toLocaleString() + '). Confirming…', true); return; }
+        if (levelUp) {
+          // Gain = what was left in the old level + what is now in the new one.
+          const g = (S.total ? S.total - S.last.exp : 0) + r.exp;
+          S.resync = true; S.total = null; accept(r, t, g);
+        } else { S.resync = true; accept(r, t, 0); }
+      }
+
+      /* ---------- numbers ---------- */
+      function rate() {
+        const s = S.samples; if (s.length < 2) return null;
+        const now = s[s.length - 1], cutoff = now.t - 600000;
+        let a = s[0]; for (const p of s) { if (p.t >= cutoff) break; a = p; }
+        const dt = (now.t - a.t) / 1000; if (dt < 8) return null;
+        return (now.gain - a.gain) / dt;   // EXP per second
+      }
+      const fmt = n => Math.round(n).toLocaleString();
+      function fmtDur(sec) {
+        if (!isFinite(sec) || sec < 0) return '–';
+        sec = Math.round(sec);
+        const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+        return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m ${String(s).padStart(2, '0')}s`;
+      }
+      function updateUI() {
+        const L = S.last;
+        $('current-exp').textContent = L ? L.exp.toLocaleString() : '--';
+        $('current-pct').textContent = L ? `Level progress ${L.pct.toFixed(2)}%` : 'Level progress --';
+        $('gain').textContent = fmt(S.gain);
+        const el = S.start ? (Date.now() - S.start) / 1000 : 0;
+        $('elapsed').textContent = fmtDur(el);
+        const r = rate();
+        $('rate10').textContent = r == null ? '--' : fmt(r * 600);
+        $('eta').textContent = (r != null && r > 0 && L && S.total) ? fmtDur(S.total * (1 - L.pct / 100) / r) : '--';
+      }
+      setInterval(() => { if (S.start && !paused) updateUI(); }, 1000);
+      function setStatus(msg, err) { const e = $('status'); e.textContent = msg; e.className = 'status' + (err ? ' err' : ''); }
+
+      /* ---------- chart ---------- */
+      const cv = $('chart'), cx = cv.getContext('2d');
+      function drawChart() {
+        const dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect();
+        cv.width = r.width * dpr; cv.height = r.height * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const W = r.width, H = r.height, L = 64, B = 26, T = 10, R = 12;
+        cx.clearRect(0, 0, W, H);
+        cx.font = '12px Quicksand, sans-serif'; cx.fillStyle = '#a0a0c0'; cx.strokeStyle = 'rgba(255,255,255,0.08)'; cx.lineWidth = 1;
+        const s = S.samples;
+        if (s.length < 2) { cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('The graph appears once two readings are in.', W / 2, H / 2); return; }
+        const t0 = s[0].t, t1 = s[s.length - 1].t, span = Math.max(1, t1 - t0);
+        const gmin = Math.min(0, ...s.map(p => p.gain)), gmax = Math.max(10, ...s.map(p => p.gain));
+        const X = t => L + (t - t0) / span * (W - L - R), Y = g => T + (1 - (g - gmin) / (gmax - gmin)) * (H - T - B);
+        cx.textAlign = 'right'; cx.textBaseline = 'middle';
+        for (let i = 0; i <= 4; i++) {
+          const g = gmin + (gmax - gmin) * i / 4, y = Y(g);
+          cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke(); cx.fillText(fmt(g), L - 8, y);
+        }
+        cx.textAlign = 'center'; cx.textBaseline = 'top';
+        for (let i = 0; i <= 4; i++) { const t = t0 + span * i / 4; cx.fillText(fmtDur((t - t0) / 1000), X(t), H - B + 8); }
+        const grad = cx.createLinearGradient(0, T, 0, H - B);
+        grad.addColorStop(0, 'rgba(147,197,253,.30)'); grad.addColorStop(1, 'rgba(147,197,253,0)');
+        cx.beginPath(); cx.moveTo(X(s[0].t), Y(s[0].gain));
+        for (const p of s) cx.lineTo(X(p.t), Y(p.gain));
+        cx.lineTo(X(t1), Y(gmin)); cx.lineTo(X(t0), Y(gmin)); cx.closePath(); cx.fillStyle = grad; cx.fill();
+        cx.beginPath(); s.forEach((p, i) => i ? cx.lineTo(X(p.t), Y(p.gain)) : cx.moveTo(X(p.t), Y(p.gain)));
+        cx.strokeStyle = '#93c5fd'; cx.lineWidth = 2; cx.stroke();
+      }
+      window.addEventListener('resize', drawChart);
+      drawChart();
+    })();
   </script>
 </body>
 </html>
