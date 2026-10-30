@@ -333,4 +333,15 @@
           expChart.data.datasets[0].data.push(currentExp);
           
           if (expChart.data.labels.length > 25) {
-            expChart
+            expChart.data.labels.shift();
+            expChart.data.datasets[0].data.shift();
+          }
+          expChart.update();
+        }
+      } catch (ocrErr) {
+        console.warn("OCR scan iteration skipped:", ocrErr);
+      }
+    }
+  </script>
+</body>
+</html>
