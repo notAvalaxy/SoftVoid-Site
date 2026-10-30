@@ -107,14 +107,21 @@
       margin-top: 6px;
     }
 
+    .instruction-hint {
+      font-size: 0.85rem;
+      color: #93c5fd;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
     #canvas-container {
       position: relative;
       width: 100%;
-      margin-top: 15px;
       background: #000;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: crosshair;
     }
 
     video, canvas {
@@ -157,7 +164,7 @@
   <div class="tracker-panel">
     <h2>Game EXP Tracker</h2>
     <p>
-      Share your MapleStory window. The blue box locks onto your bottom-right EXP tracker to live-stream your rates and countdown to level up.
+      Share your MapleStory window. Once active, you can <b>click and drag directly on the video preview below</b> to frame your EXP bar. Your selection is automatically remembered!
     </p>
 
     <button id="start-btn" class="btn">Share Game Screen</button>
@@ -177,6 +184,7 @@
       </div>
     </div>
 
+    <div class="instruction-hint">👇 Click & drag on the feed below to reposition or resize your EXP bounding box:</div>
     <div id="canvas-container">
       <video id="game-video" autoplay playsinline style="display:none;"></video>
       <canvas id="ocr-canvas"></canvas>
@@ -227,7 +235,7 @@
       setTimeout(() => { message.remove(); }, 3000);
     });
 
-// --- OCR & EXP Tracker Engine (Fine-tuned for MapleStory EXP Bar) ---
+    // --- OCR & EXP Tracker Engine with Interactive Drag-to-Select ---
     let video = document.getElementById('game-video');
     let canvas = document.getElementById('ocr-canvas');
     let ctx = canvas.getContext('2d');
@@ -236,8 +244,52 @@
     let isTracking = false;
     let expHistory = []; 
     
-    // Adjusted: Lowered down and made thinner so it avoids the HP bar entirely
-    let roiPct = { x: 0.52, y: 0.93, width: 0.13, height: 0.05 }; 
+    // Default region or load remembered region from localStorage
+    let roiPct = { x: 0.52, y: 0.93, width: 0.13, height: 0.05 };
+    const savedRoi = localStorage.getItem('softvoid_roi_pct');
+    if (savedRoi) {
+      try {
+        roiPct = JSON.parse(savedRoi);
+      } catch (e) {
+        console.warn("Could not load saved ROI", e);
+      }
+    }
+
+    // Mouse Dragging State for Custom Selection Box
+    let dragStart = null;
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (!isTracking) return;
+      const rect = canvas.getBoundingClientRect();
+      dragStart = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
+      };
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragStart || !isTracking) return;
+      const rect = canvas.getBoundingClientRect();
+      const current = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
+      };
+
+      roiPct = {
+        x: Math.min(dragStart.x, current.x),
+        y: Math.min(dragStart.y, current.y),
+        width: Math.abs(current.x - dragStart.x),
+        height: Math.abs(current.y - dragStart.y)
+      };
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (dragStart) {
+        dragStart = null;
+        // Save user's custom box to browser storage so it is remembered
+        localStorage.setItem('softvoid_roi_pct', JSON.stringify(roiPct));
+      }
+    });
 
     // Chart.js Configuration
     const chartCtx = document.getElementById('expChart').getContext('2d');
@@ -332,8 +384,7 @@
         if (match) {
           const currentExp = parseFloat(match[0]);
           
-          // Sanity check: EXP percentage must be between 0 and 100. 
-          // Rejects any accidental HP bar text reads like "1003" or "101".
+          // Sanity check: EXP percentage must be between 0 and 100
           if (currentExp < 0 || currentExp >= 100) return;
 
           document.getElementById('current-exp').innerText = currentExp + "%";
@@ -353,7 +404,6 @@
             if (minutesElapsed > 0.05) { 
               const expGained = latest.exp - oldest.exp;
               
-              // Ignore crazy jumps (like a level up reset or OCR glitch)
               if (expGained > 0 && expGained < 15) {
                 const expPerMin = expGained / minutesElapsed;
                 document.getElementById('exp-per-min').innerText = expPerMin.toFixed(2) + "% / min";
