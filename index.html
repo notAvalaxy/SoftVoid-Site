@@ -1,4 +1,233 @@
-// --- OCR & EXP Tracker Engine (Tuned for MapleStory UI) ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>softvoid.cc - EXP Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- CDNs for Tesseract.js (OCR) and Chart.js (Analytics) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #1a1a2e, #0e0e1a);
+      color: #e0e0ff;
+      font-family: 'Quicksand', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    .star {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s infinite ease-in-out;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.5); }
+    }
+
+    /* EXP Tracker Main Glassmorphism Panel */
+    .tracker-panel {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 28px;
+      background: rgba(20, 20, 35, 0.78);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(224, 224, 255, 0.12);
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      opacity: 0.85;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #2563eb; transform: translateY(-1px); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #93c5fd;
+      margin-top: 6px;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      margin-top: 15px;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    video, canvas {
+      width: 100%;
+      display: block;
+    }
+
+    .chart-wrapper {
+      margin-top: 25px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    #audio-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 10px;
+      height: 10px;
+      background-color: #aaccff;
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: pulse 2s infinite ease-in-out;
+      z-index: 999;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Audio Indicator Dot -->
+  <div id="audio-indicator"></div>
+
+  <!-- EXP Tracker Interface Panel -->
+  <div class="tracker-panel">
+    <h2>Game EXP Tracker</h2>
+    <p>
+      Share your MapleStory game window. The blue box will lock onto your bottom-right EXP tracker bar automatically to monitor your progress in real time.
+    </p>
+
+    <button id="start-btn" class="btn">Share Game Screen</button>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Current EXP</div>
+        <div id="current-exp" class="stat-value">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EXP / Min</div>
+        <div id="exp-per-min" class="stat-value">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Est. Time to Level</div>
+        <div id="time-to-level" class="stat-value">--</div>
+      </div>
+    </div>
+
+    <div id="canvas-container">
+      <video id="game-video" autoplay playsinline style="display:none;"></video>
+      <canvas id="ocr-canvas"></canvas>
+    </div>
+
+    <div class="chart-wrapper">
+      <canvas id="expChart" height="110"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // --- Starry Background Generation ---
+    for (let i = 0; i < 60; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = Math.random() * 2 + 1;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.top = `${Math.random() * 100}vh`;
+      star.style.left = `${Math.random() * 100}vw`;
+      star.style.animationDelay = `${Math.random() * 5}s`;
+      star.style.animationDuration = `${2 + Math.random() * 4}s`;
+      document.body.appendChild(star);
+    }
+
+    // --- "No Peeking" Context Menu ---
+    document.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      const message = document.createElement('div');
+      message.textContent = "No peeking.";
+      message.style.position = 'fixed';
+      message.style.bottom = '40px';
+      message.style.left = '50%';
+      message.style.transform = 'translateX(-50%)';
+      message.style.background = 'rgba(30, 30, 60, 0.9)';
+      message.style.color = '#ccc';
+      message.style.padding = '0.5em 1em';
+      message.style.borderRadius = '8px';
+      message.style.fontFamily = 'monospace';
+      message.style.fontSize = '0.9rem';
+      message.style.zIndex = 10000;
+      message.style.opacity = 0;
+      message.style.transition = 'opacity 0.5s ease';
+
+      document.body.appendChild(message);
+      setTimeout(() => { message.style.opacity = 1; }, 10);
+      setTimeout(() => { message.style.opacity = 0; }, 2000);
+      setTimeout(() => { message.remove(); }, 3000);
+    });
+
+    // --- OCR & EXP Tracker Engine (Tuned for MapleStory UI) ---
     let video = document.getElementById('game-video');
     let canvas = document.getElementById('ocr-canvas');
     let ctx = canvas.getContext('2d');
@@ -6,8 +235,7 @@
     
     let isTracking = false;
     
-    // Bounding box tailored for the bottom-right EXP area in the game UI
-    // (Expressed as percentages of the total video resolution so it scales automatically)
+    // Percentage-based bounding box tracking the bottom-right EXP UI section
     let roiPct = { x: 0.52, y: 0.90, width: 0.16, height: 0.08 }; 
 
     // Chart.js Configuration
@@ -64,7 +292,7 @@
         let rw = canvas.width * roiPct.width;
         let rh = canvas.height * roiPct.height;
 
-        // Render the Region of Interest (ROI) blue outline box on the preview feed
+        // Render the Region of Interest (ROI) blue outline box preview
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 3;
         ctx.strokeRect(rx, ry, rw, rh);
@@ -85,19 +313,15 @@
       cropCanvas.width = rw * 2;
       cropCanvas.height = rh * 2;
       const cropCtx = cropCanvas.getContext('2d');
-      cropCtx.imageSmoothingEnabled = false; // Keep pixel text sharp
+      cropCtx.imageSmoothingEnabled = false;
       cropCtx.drawImage(canvas, rx, ry, rw, rh, 0, 0, cropCanvas.width, cropCanvas.height);
 
       try {
-        // Pass whitelist characters to Tesseract so it focuses heavily on numbers and decimal/percentage text
         const result = await Tesseract.recognize(cropCanvas, 'eng', {
           tessedit_char_whitelist: '0123456789.%k'
         });
         
         const rawText = result.data.text.trim();
-        console.log("OCR Detected:", rawText);
-
-        // Extract numbers (handling decimals like 21.95)
         const match = rawText.match(/(\d+\.\d+|\d+)/);
         
         if (match) {
@@ -109,12 +333,4 @@
           expChart.data.datasets[0].data.push(currentExp);
           
           if (expChart.data.labels.length > 25) {
-            expChart.data.labels.shift();
-            expChart.data.datasets[0].data.shift();
-          }
-          expChart.update();
-        }
-      } catch (ocrErr) {
-        console.warn("OCR scan iteration skipped:", ocrErr);
-      }
-    }
+            expChart
