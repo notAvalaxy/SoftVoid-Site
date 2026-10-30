@@ -101,4 +101,90 @@
     }
 
     .stat-value {
-      font-size: 1.
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #93c5fd;
+      margin-top: 6px;
+    }
+
+    .instruction-hint {
+      font-size: 0.85rem;
+      color: #93c5fd;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: crosshair;
+    }
+
+    video, canvas {
+      width: 100%;
+      display: block;
+    }
+
+    .chart-wrapper {
+      margin-top: 25px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    #audio-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 10px;
+      height: 10px;
+      background-color: #aaccff;
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: pulse 2s infinite ease-in-out;
+      z-index: 999;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Audio Indicator Dot -->
+  <div id="audio-indicator"></div>
+
+  <!-- EXP Tracker Interface Panel -->
+  <div class="tracker-panel">
+    <h2>Game EXP Tracker</h2>
+    <p>
+      Share your game window. Once active, you can <b>click and drag directly on the video preview below</b> to frame your EXP bar precisely. Your box position is automatically remembered!
+    </p>
+
+    <button id="start-btn" class="btn">Share Game Screen</button>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Current EXP</div>
+        <div id="current-exp" class="stat-value">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EXP / Min</div>
+        <div id="exp-per-min" class="stat-value">0.00%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Est. Time to Level</div>
+        <div id="time-to-level" class="stat-value">--</div>
+      </div>
+    </div>
+
+    <div class="instruction-hint">👇 Click & drag on the feed below to adjust your EXP bounding box:</div>
+    <div id="canvas-container">
+      <video id="game-video" autoplay playsinline style="display:none;"></video>
+      <canvas id="ocr-canvas
