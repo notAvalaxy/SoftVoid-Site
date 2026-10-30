@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>softvoid.cc - EXP Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
   
@@ -102,7 +101,7 @@
     }
 
     .stat-value {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: #93c5fd;
       margin-top: 6px;
@@ -165,7 +164,7 @@
   <div class="tracker-panel">
     <h2>Game EXP Tracker</h2>
     <p>
-      Share your game window. Once active, you can <b>click and drag directly on the video preview below</b> to frame your EXP bar precisely. Your box position is automatically remembered!
+      Share your game window. Frame your box around both your raw EXP number and percentage (e.g., <code>32,891 (23.72%)</code>) to track absolute EXP gains and precise time-to-level!
     </p>
 
     <button id="start-btn" class="btn">Share Game Screen</button>
@@ -177,7 +176,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-label">EXP / Min</div>
-        <div id="exp-per-min" class="stat-value">0.00%</div>
+        <div id="exp-per-min" class="stat-value">0 EXP / min</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Est. Time to Level</div>
@@ -227,16 +226,16 @@
       message.style.fontFamily = 'monospace';
       message.style.fontSize = '0.9rem';
       message.style.zIndex = 10000;
-      message.style.opacity = '0';
+      message.style.opacity = 0;
       message.style.transition = 'opacity 0.5s ease';
 
       document.body.appendChild(message);
-      setTimeout(() => { message.style.opacity = '1'; }, 10);
-      setTimeout(() => { message.style.opacity = '0'; }, 2000);
+      setTimeout(() => { message.style.opacity = 1; }, 10);
+      setTimeout(() => { message.style.opacity = 0; }, 2000);
       setTimeout(() => { message.remove(); }, 3000);
     });
 
-    // --- OCR & EXP Tracker Engine ---
+    // --- OCR & EXP Tracker Engine with Raw Value Parsing ---
     const video = document.getElementById('game-video');
     const canvas = document.getElementById('ocr-canvas');
     const ctx = canvas.getContext('2d');
@@ -245,8 +244,7 @@
     let isTracking = false;
     let expHistory = []; 
     
-    // Default ROI or load remembered region from localStorage
-    let roiPct = { x: 0.52, y: 0.93, width: 0.13, height: 0.05 };
+    let roiPct = { x: 0.52, y: 0.93, width: 0.20, height: 0.05 };
     const savedRoi = localStorage.getItem('softvoid_roi_pct');
     if (savedRoi) {
       try {
@@ -256,7 +254,6 @@
       }
     }
 
-    // Mouse Dragging State for Custom Selection Box
     let dragStart = null;
 
     canvas.addEventListener('mousedown', (e) => {
@@ -291,14 +288,14 @@
       }
     });
 
-    // Chart.js Configuration
+    // Chart.js Configuration (Tracking Raw Absolute EXP)
     const chartCtx = document.getElementById('expChart').getContext('2d');
     const expChart = new Chart(chartCtx, {
       type: 'line',
       data: {
         labels: [],
         datasets: [{
-          label: 'EXP Percentage Trajectory',
+          label: 'Total EXP Trajectory',
           data: [],
           borderColor: '#93c5fd',
           backgroundColor: 'rgba(147, 197, 253, 0.1)',
@@ -320,26 +317,16 @@
     startBtn.addEventListener('click', async () => {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-          alert("Screen sharing is blocked or not supported. Ensure you are accessing via HTTPS (https://softvoid.cc).");
+          alert("Screen sharing requires a secure HTTPS connection.");
           return;
         }
 
-        // Clean up previous active stream tracks
         if (video.srcObject) {
-          const tracks = video.srcObject.getTracks();
-          tracks.forEach(track => track.stop());
+          video.srcObject.getTracks().forEach(track => track.stop());
         }
 
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
         video.srcObject = stream;
-        
-        // Listen for when user stops sharing via browser bar UI
-        stream.getVideoTracks()[0].addEventListener('ended', () => {
-          isTracking = false;
-          startBtn.textContent = "Share Game Screen";
-          startBtn.style.background = "#3b82f6";
-        });
-
         await video.play();
         isTracking = true;
         requestAnimationFrame(processFrame);
@@ -350,10 +337,7 @@
         startBtn.textContent = "Tracking Active (Click to Re-share)";
         startBtn.style.background = "#059669";
       } catch (err) {
-        console.error("Screen capture cancelled or failed:", err);
-        if (err.name !== "NotAllowedError") {
-          alert("Screen Sharing Error: " + (err.message || err.name));
-        }
+        console.error("Screen capture cancelled or error:", err);
       }
     });
 
@@ -369,7 +353,6 @@
         let rw = canvas.width * roiPct.width;
         let rh = canvas.height * roiPct.height;
 
-        // Render blue bounding box preview
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 3;
         ctx.strokeRect(rx, ry, rw, rh);
@@ -385,76 +368,89 @@
       let rw = canvas.width * roiPct.width;
       let rh = canvas.height * roiPct.height;
 
-      if (rw <= 0 || rh <= 0) return;
-
-      // Crop and upscale 3x for Tesseract precision on pixelated game text
       const cropCanvas = document.createElement('canvas');
-      cropCanvas.width = Math.max(1, rw * 3);
-      cropCanvas.height = Math.max(1, rh * 3);
+      cropCanvas.width = rw * 3;
+      cropCanvas.height = rh * 3;
       const cropCtx = cropCanvas.getContext('2d');
       cropCtx.imageSmoothingEnabled = false;
       cropCtx.drawImage(canvas, rx, ry, rw, rh, 0, 0, cropCanvas.width, cropCanvas.height);
 
       try {
+        // Whitelist includes numbers, commas, dots, and percent signs
         const result = await Tesseract.recognize(cropCanvas, 'eng', {
-          tessedit_char_whitelist: '0123456789.%'
+          tessedit_char_whitelist: '0123456789.,%'
         });
         
         const rawText = result.data.text.trim();
         console.log("Raw OCR Read:", rawText);
 
-        const match = rawText.match(/(\d+\.\d+|\d+)/);
+        // Extract all numbers (handling commas like "32,891" and decimals like "23.72")
+        const allNumbers = rawText.match(/[\d,]+(?:\.\d+)?/g);
         
-        if (match) {
-          const currentExp = parseFloat(match[0]);
-          
-          // Sanity filter: EXP percentage must be between 0% and 100%
-          if (isNaN(currentExp) || currentExp < 0 || currentExp >= 100) return;
+        if (allNumbers && allNumbers.length >= 2) {
+          // Typically the first large number is raw EXP and the decimal number is percentage
+          let rawExpStr = '';
+          let pctVal = 0;
 
-          document.getElementById('current-exp').innerText = currentExp.toFixed(3) + "%";
-          
-          const now = Date.now();
-          expHistory.push({ time: now, exp: currentExp });
-          
-          // Keep sliding history window for the last 5 minutes
-          expHistory = expHistory.filter(item => now - item.time < 300000);
-
-          // Calculate EXP/Min and Time to Level
-          if (expHistory.length >= 2) {
-            const oldest = expHistory[0];
-            const latest = expHistory[expHistory.length - 1];
-            const minutesElapsed = (latest.time - oldest.time) / 60000;
-            
-            if (minutesElapsed > 0.05) { 
-              const expGained = latest.exp - oldest.exp;
-              
-              if (expGained > 0 && expGained < 15) {
-                const expPerMin = expGained / minutesElapsed;
-                document.getElementById('exp-per-min').innerText = expPerMin.toFixed(2) + "% / min";
-                
-                const remainingExp = 100 - currentExp;
-                const ttlMinutes = remainingExp / expPerMin;
-                
-                if (ttlMinutes < 60) {
-                  document.getElementById('time-to-level').innerText = Math.round(ttlMinutes) + " mins";
-                } else {
-                  const hours = (ttlMinutes / 60).toFixed(1);
-                  document.getElementById('time-to-level').innerText = hours + " hrs";
-                }
-              }
+          for (let numStr of allNumbers) {
+            if (numStr.includes('.')) {
+              pctVal = parseFloat(numStr);
+            } else if (numStr.replace(/,/g, '').length >= 3) {
+              rawExpStr = numStr;
             }
           }
 
-          // Update tracking chart
-          const timeString = new Date().toLocaleTimeString();
-          expChart.data.labels.push(timeString);
-          expChart.data.datasets[0].data.push(currentExp);
-          
-          if (expChart.data.labels.length > 25) {
-            expChart.data.labels.shift();
-            expChart.data.datasets[0].data.shift();
+          const currentRawExp = parseInt(rawExpStr.replace(/,/g, ''), 10);
+
+          if (!isNaN(currentRawExp) && currentRawExp > 0 && pctVal > 0 && pctVal < 100) {
+            document.getElementById('current-exp').innerText = currentRawExp.toLocaleString() + ` (${pctVal}%)`;
+            
+            const now = Date.now();
+            expHistory.push({ time: now, exp: currentRawExp, pct: pctVal });
+            
+            // Keep history window for the last 5 minutes
+            expHistory = expHistory.filter(item => now - item.time < 300000);
+
+            if (expHistory.length >= 2) {
+              const oldest = expHistory[0];
+              const latest = expHistory[expHistory.length - 1];
+              const minutesElapsed = (latest.time - oldest.time) / 60000;
+              
+              if (minutesElapsed > 0.05) { 
+                const expGained = latest.exp - oldest.exp;
+                
+                if (expGained > 0) {
+                  const expPerMin = Math.round(expGained / minutesElapsed);
+                  document.getElementById('exp-per-min').innerText = expPerMin.toLocaleString() + " EXP / min";
+                  
+                  // Estimate total EXP needed for level using current raw EXP and percentage ratio
+                  const estimatedTotalExpForLevel = currentRawExp / (pctVal / 100);
+                  const remainingExp = estimatedTotalExpForLevel - currentRawExp;
+                  const ttlMinutes = remainingExp / expPerMin;
+                  
+                  if (ttlMinutes > 0 && isFinite(ttlMinutes)) {
+                    if (ttlMinutes < 60) {
+                      document.getElementById('time-to-level').innerText = Math.round(ttlMinutes) + " mins";
+                    } else {
+                      const hours = (ttlMinutes / 60).toFixed(1);
+                      document.getElementById('time-to-level').innerText = hours + " hrs";
+                    }
+                  }
+                }
+              }
+            }
+
+            // Update chart with raw EXP progression
+            const timeString = new Date().toLocaleTimeString();
+            expChart.data.labels.push(timeString);
+            expChart.data.datasets[0].data.push(currentRawExp);
+            
+            if (expChart.data.labels.length > 25) {
+              expChart.data.labels.shift();
+              expChart.data.datasets[0].data.shift();
+            }
+            expChart.update();
           }
-          expChart.update();
         }
       } catch (ocrErr) {
         console.warn("OCR scan iteration skipped:", ocrErr);
