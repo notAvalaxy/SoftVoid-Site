@@ -1,67 +1,26 @@
 <!DOCTYPE html>
-<!-- What were you expecting to find? -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>softvoid.cc</title>
+  <title>softvoid.cc - EXP Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- CDNs for Tesseract.js (OCR) and Chart.js (Analytics) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       margin: 0;
       background: radial-gradient(circle at top left, #1a1a2e, #0e0e1a);
       color: #e0e0ff;
       font-family: 'Quicksand', sans-serif;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: center;
       flex-direction: column;
-      height: 100vh;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    h1, p {
-      animation: float 6s ease-in-out infinite;
-    }
-
-    h1 {
-      font-size: 3rem;
-      margin: 0.2em;
-    }
-
-    p {
-      font-size: 1.25rem;
-      margin: 0.3em;
-      opacity: 0.85;
-    }
-
-    a {
-      color: #aaccff;
-      text-decoration: none;
-      border-bottom: 1px dashed #aaccff;
-      transition: all 0.3s ease;
-    }
-
-    a:hover {
-      color: #ffffff;
-      border-bottom: 1px solid #ffffff;
-    }
-
-    img {
-      max-width: 200px;
-      margin-bottom: 2rem;
-      border-radius: 12px;
-      animation: float 6s ease-in-out infinite;
-    }
-
-    .ascii-moon {
-      font-family: monospace;
-      font-size: 10px;
-      color: #ccccff;
-      opacity: 0.7;
-      margin-top: 1rem;
-      line-height: 1.1;
-      animation: float 8s ease-in-out infinite;
+      align-items: center;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     .star {
@@ -71,6 +30,8 @@
       background: white;
       border-radius: 50%;
       animation: twinkle 3s infinite ease-in-out;
+      z-index: 1;
+      pointer-events: none;
     }
 
     @keyframes twinkle {
@@ -78,9 +39,94 @@
       50% { opacity: 1; transform: scale(1.5); }
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    /* EXP Tracker Main Glassmorphism Panel */
+    .tracker-panel {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 28px;
+      background: rgba(20, 20, 35, 0.78);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(224, 224, 255, 0.12);
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      opacity: 0.85;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #2563eb; transform: translateY(-1px); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #93c5fd;
+      margin-top: 6px;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      margin-top: 15px;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    video, canvas {
+      width: 100%;
+      display: block;
+    }
+
+    .chart-wrapper {
+      margin-top: 25px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
     }
 
     #audio-indicator {
@@ -97,22 +143,52 @@
     }
 
     @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 0.5;
-      }
-      50% {
-        transform: scale(1.4);
-        opacity: 1;
-      }
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.4); opacity: 1; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Audio Indicator Dot -->
   <div id="audio-indicator"></div>
 
+  <!-- EXP Tracker Interface Panel -->
+  <div class="tracker-panel">
+    <h2>Game EXP Tracker</h2>
+    <p>
+      Share your game window, click & drag a bounding box over your EXP counter, and watch real-time rates and projections calculate instantly.
+    </p>
+
+    <button id="start-btn" class="btn">Share Game Screen</button>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Current EXP</div>
+        <div id="current-exp" class="stat-value">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EXP / Min</div>
+        <div id="exp-per-min" class="stat-value">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Est. Time to Level</div>
+        <div id="time-to-level" class="stat-value">--</div>
+      </div>
+    </div>
+
+    <div id="canvas-container">
+      <video id="game-video" autoplay playsinline style="display:none;"></video>
+      <canvas id="ocr-canvas"></canvas>
+    </div>
+
+    <div class="chart-wrapper">
+      <canvas id="expChart" height="110"></canvas>
+    </div>
+  </div>
+
   <script>
+    // --- Starry Background Generation ---
     for (let i = 0; i < 60; i++) {
       const star = document.createElement('div');
       star.className = 'star';
@@ -126,6 +202,7 @@
       document.body.appendChild(star);
     }
 
+    // --- "No Peeking" Context Menu ---
     document.addEventListener('contextmenu', event => {
       event.preventDefault();
       const message = document.createElement('div');
@@ -134,7 +211,7 @@
       message.style.bottom = '40px';
       message.style.left = '50%';
       message.style.transform = 'translateX(-50%)';
-      message.style.background = 'rgba(30, 30, 60, 0.8)';
+      message.style.background = 'rgba(30, 30, 60, 0.9)';
       message.style.color = '#ccc';
       message.style.padding = '0.5em 1em';
       message.style.borderRadius = '8px';
@@ -149,7 +226,104 @@
       setTimeout(() => { message.style.opacity = 0; }, 2000);
       setTimeout(() => { message.remove(); }, 3000);
     });
-  </script>
 
+    // --- OCR & EXP Tracker Engine ---
+    let video = document.getElementById('game-video');
+    let canvas = document.getElementById('ocr-canvas');
+    let ctx = canvas.getContext('2d');
+    let startBtn = document.getElementById('start-btn');
+    
+    let isTracking = false;
+    let roi = { x: 40, y: 40, width: 220, height: 60 }; // Default sample region box
+
+    // Chart.js Configuration
+    const chartCtx = document.getElementById('expChart').getContext('2d');
+    const expChart = new Chart(chartCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Total EXP Trajectory',
+          data: [],
+          borderColor: '#93c5fd',
+          backgroundColor: 'rgba(147, 197, 253, 0.1)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#e0e0ff', font: { family: 'Quicksand' } } } },
+        scales: {
+          x: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+
+    startBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        video.srcObject = stream;
+        video.play();
+        isTracking = true;
+        requestAnimationFrame(processFrame);
+        setInterval(runOCR, 3500); // Trigger Tesseract scan every 3.5 seconds
+        startBtn.textContent = "Screen Sharing Active";
+        startBtn.style.background = "#059669";
+      } catch (err) {
+        console.error("Screen capture cancelled or error:", err);
+      }
+    });
+
+    function processFrame() {
+      if (!isTracking) return;
+      if (video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Render Region of Interest (ROI) outline box
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(roi.x, roi.y, roi.width, roi.height);
+      }
+      requestAnimationFrame(processFrame);
+    }
+
+    async function runOCR() {
+      if (!isTracking || canvas.width === 0) return;
+
+      // Isolate the selected ROI box for Tesseract OCR
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = roi.width;
+      cropCanvas.height = roi.height;
+      const cropCtx = cropCanvas.getContext('2d');
+      cropCtx.drawImage(canvas, roi.x, roi.y, roi.width, roi.height, 0, 0, roi.width, roi.height);
+
+      try {
+        const result = await Tesseract.recognize(cropCanvas, 'eng');
+        const detectedText = result.data.text.replace(/[^0-9]/g, '');
+        
+        if (detectedText) {
+          const currentExp = parseInt(detectedText, 10);
+          document.getElementById('current-exp').innerText = currentExp.toLocaleString();
+          
+          const now = new Date().toLocaleTimeString();
+          expChart.data.labels.push(now);
+          expChart.data.datasets[0].data.push(currentExp);
+          
+          if (expChart.data.labels.length > 25) {
+            expChart.data.labels.shift();
+            expChart.data.datasets[0].data.shift();
+          }
+          expChart.update();
+        }
+      } catch (ocrErr) {
+        console.warn("OCR scan iteration skipped:", ocrErr);
+      }
+    }
+  </script>
 </body>
 </html>
